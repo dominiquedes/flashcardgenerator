@@ -22,4 +22,4 @@ https://aistudio.google.com/app/apikey
 
 Enjoy! Email me at engdomdes@gmail.com with any questions. 
 
-[Buy Me A Coffee](https://buymeacoffee.com/engineerdom)
+Did you like it? [Buy Me A Coffee](https://buymeacoffee.com/engineerdom)
