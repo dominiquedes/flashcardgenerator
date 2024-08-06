@@ -11,7 +11,7 @@ genai.configure(api_key=api_key)
 model_gen = genai.GenerativeModel('gemini-1.5-flash')
 
 print("Example: ")
-print(r"C:\Users\domin\Downloads\Anatomy-of-Livestock.pptx")
+print(r"C:\Users\user\Downloads\Anatomy-of-Livestock.pptx")
 
 # Use raw string notation for the prompt to avoid escape sequence issues
 input_file_input = input(r"Paste the path of your file: (e.g., C:\Users\user\Downloads\Anatomy-of-Livestock.pptx or .pdf): ")
