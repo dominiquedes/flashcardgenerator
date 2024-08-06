@@ -3,29 +3,35 @@ import json
 from pypdf import PdfReader
 from pptx import Presentation
 import google.generativeai as genai
-from docx import Document
+from tkinter import *
+from tkinter import filedialog
 
-
-api_key = "YOUR API KEY"
+api_key = "Your API Key"
 genai.configure(api_key=api_key)
 model_gen = genai.GenerativeModel('gemini-1.5-flash')
 
-print("Example: ")
-print(r"C:\Users\user\Downloads\Anatomy-of-Livestock.pptx")
+def select_file():
+    root = Tk()
+    root.withdraw()  
 
-# Use raw string notation for the prompt to avoid escape sequence issues
-input_file_input = input(r"Paste the path of your file: (e.g., C:\Users\user\Downloads\Anatomy-of-Livestock.pptx or .pdf): ")
+    file_path = filedialog.askopenfilename(
+        title="Pick a PDF or PPTX file",
+        filetypes=[
+            ("PDF and PPTX files", "*.pdf;*.pptx"),
+            ("All files", "*.*")
+        ]
+    )
 
-# Remove double quotes and single quotes from the input
-input_file_input = input_file_input.replace('"', '').replace("'", '')
+    root.destroy()  
+    return file_path
 
-# Replace backslashes with forward slashes
-input_file_input = input_file_input.replace("\\", "/")
+file_path = select_file()
+if file_path:
+    print("File selected:", file_path)
+else:
+    print("No file chosen.")
 
-# Remove leading/trailing whitespace
-input_file = input_file_input.strip()
-
-print(f"File path received: {input_file}")
+input_file = file_path
 
 number_of_cards = input("How many cards do you want? ")
 
@@ -51,48 +57,62 @@ def extract_text(file_path):
     elif file_path.lower().endswith('.pptx'):
         return extract_text_from_pptx(file_path)
     else:
-        raise ValueError("Unsupported file format")
+        print("Nope, this file format ain't supported.")
+        return ""
 
 def generate_flashcards(text):
     response = model_gen.generate_content(
-        f"generate {number_of_cards} flashcards for the following as an array of objects only nothing else just the array as 'front': for the question and 'back': for the answer (no ```json```): {text}"
-    )
+        f"Make {number_of_cards} flashcards. Reply with just a JSON array. Each item should have 'front' and 'back'. Here's the text: {text}"
+    )    
 
     if hasattr(response, 'text'):
         result = response.text
     else:
         result = response
 
-    cleaned_data = result.strip().strip('```javascript').strip('```')
-    
+    def clean_json_response(response):
+        start_marker = "```json"
+        end_marker = "```"
+
+        if start_marker in response:
+            response = response.split(start_marker)[-1]
+
+        if end_marker in response:
+            response = response.split(end_marker)[0]
+
+        return response.strip()
+
+    cleaned_result = clean_json_response(result)
+
     try:
-        flashcards = json.loads(cleaned_data)
+        flashcards = json.loads(cleaned_result)
     except json.JSONDecodeError as e:
-        print(f"Error parsing JSON: {e}")
+        print(f"Oops, JSON error: {e}")
         flashcards = []
-    
+
     return flashcards
 
 def save_flashcards_to_txt(flashcards, output_file):
     with open(output_file, 'w', encoding='utf-8') as file:
         for card in flashcards:
             file.write(f"{card['front']}:{card['back']}\n")
-    print(f"Flashcards saved to {output_file}")
+    print(f"Saved flashcards to {output_file}")
 
 text = extract_text(input_file)
 
-print("Has all of the text! Sending to AI.")
+if text:
+    print("Got the text! Sending it to AI.")
+    flashcards = generate_flashcards(text)
 
-flashcards = generate_flashcards(text)
+    print("Flashcards done!")
 
-print("Flashcards have been generated!")
+    file_name = input('Name your .txt file (no extension): ')
 
-file_name = input('Enter the name of the .txt file (without extension): ')
+    downloads_folder = os.path.expanduser("~/Downloads")
+    output_file = os.path.join(downloads_folder, f'{file_name}.txt')
 
-# Get the path to the Downloads folder
-downloads_folder = os.path.expanduser("~/Downloads")
+    save_flashcards_to_txt(flashcards, output_file)
+else:
+    print("No text found in the file.")
 
-# Create the full path for the output file
-output_file = os.path.join(downloads_folder, f'{file_name}.txt')
-
-save_flashcards_to_txt(flashcards, output_file)
+print ("If you like this, buy me a coffee: https://buymeacoffee.com/engineerdom!")
